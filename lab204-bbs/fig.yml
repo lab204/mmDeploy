@@ -1,0 +1,22 @@
+db:
+  images: mongodb
+  environment:
+    - AUTH=no
+  ports:
+    - "27017"
+
+redis:
+  images: redis
+  environment:
+    - REDIS_PASS=none
+  ports:
+    - "6379"
+
+web:
+  build: .
+  ports:
+    - "3000:9292"
+  command: bundle exec rackup -s Puma
+  links:
+    - db
+    - redis
