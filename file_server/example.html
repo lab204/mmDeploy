@@ -1,0 +1,16 @@
+<html>
+<head>
+	<title>文件上传示例</title>
+</head>
+<body>
+	<div>
+		<form action="http://localhost/push" method="post" enctype ="multipart/form-data" runat="server"> 
+			Force:<input id="force" name="force" type="checkbox"><br>
+			Rename:<input id="rename" name="rename" type="checkbox"><br>
+			Path:<input id="path" name="path" type="text"><br>
+			File:<input id="file" runat="server" name="file" type="file" /><br>
+			<input type="submit" name="submit" value="提交" id="submit" /><br>
+		</form>
+	</div>
+</body>
+</html>
