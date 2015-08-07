@@ -1,4 +1,5 @@
 FROM ckeyer/golang:1.4
+MAINTAINER Ckeyer <me@ckeyer.com>
 
 WORKDIR /gopath/app
 ENV GOPATH /gopath/app
