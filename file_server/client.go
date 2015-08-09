@@ -9,6 +9,8 @@ import (
 	"os"
 )
 
+var url = "http://ckeyer-file-s.daoapp.io/"
+
 func main() {
 	Upload()
 }
@@ -39,7 +41,7 @@ func Upload() (err error) {
 	// Important if you do not close the multipart writer you will not have a
 	// terminating boundry
 	w.Close()
-	req, err := http.NewRequest("POST", "http://localhost/test/?force=true", buf)
+	req, err := http.NewRequest("POST", url+"test?force=true", buf)
 	if err != nil {
 		fmt.Println("f")
 		return err
