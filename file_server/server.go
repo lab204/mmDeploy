@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"crypto/hmac"
 	"crypto/md5"
+	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -13,8 +16,8 @@ import (
 )
 
 const (
-	ENV_FILE_SERVER_SECRET_KEY = "ENV_FILE_SERVER_SECRET_KEY"
-	ENV_FILE_SERVER_TOKEN      = "ENV_FILE_SERVER_TOKEN"
+	FILE_SERVER_SECRET_KEY = "FILE_SERVER_SECRET_KEY"
+	FILE_SERVER_TOKEN      = "FILE_SERVER_TOKEN"
 )
 
 var (
@@ -22,8 +25,8 @@ var (
 	RootDir = os.Getenv("DATA_DIR")
 
 	// 用于文件上传认证
-	Token     string = os.Getenv(ENV_FILE_SERVER_TOKEN)
-	SecretKey string = os.Getenv(ENV_FILE_SERVER_SECRET_KEY)
+	Token = []byte(os.Getenv(FILE_SERVER_TOKEN))
+	// SecretKey string = os.Getenv(FILE_SERVER_SECRET_KEY)
 )
 
 type File struct {
@@ -88,6 +91,7 @@ func Index(w http.ResponseWriter, req *http.Request) {
 
 // 上传文件
 func Push(w http.ResponseWriter, req *http.Request) {
+	buf := new(bytes.Buffer)
 
 	// 上传文件认证
 	// token := req.Form.Get("token")
@@ -107,12 +111,27 @@ func Push(w http.ResponseWriter, req *http.Request) {
 	if req.Form.Get("force") == "true" {
 		force = true
 	}
+
 	f, fh, err := req.FormFile("file")
 	if err != nil {
 		http.Error(w, `{"error":"ParseFileForm  Failed"}`, http.StatusBadRequest)
 		fmt.Println(err.Error())
 		return
 	}
+
+	//
+	_, err = io.Copy(buf, f)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	hsha1 := req.Header.Get("X-CKEYER-SHA1")
+	if HmacSha1(buf.Bytes(), Token) != hsha1 {
+		http.Error(w, `{"error":"Auth failed"}`, http.StatusNotAcceptable)
+		return
+	}
+
 	path := dir + fh.Filename
 	if !filter(path) {
 		http.Error(w, `{"error":"Not Exists"}`, http.StatusNotFound)
@@ -148,7 +167,7 @@ func Push(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer newf.Close()
-	_, err = io.Copy(newf, f)
+	_, err = io.Copy(newf, buf)
 	if err != nil {
 		http.Error(w, `{"error":"Upload File Failed"}`, http.StatusBadRequest)
 		return
@@ -187,4 +206,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func HmacSha1(message, key []byte) string {
+	mac := hmac.New(sha1.New, key)
+	mac.Write(message)
+	expectedMAC := mac.Sum(nil)
+	return fmt.Sprintf("%x", expectedMAC)
 }

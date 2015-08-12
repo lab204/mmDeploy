@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha1"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -9,7 +11,10 @@ import (
 	"os"
 )
 
-var url = "http://ckeyer-file-s.daoapp.io/"
+var (
+	url   = "http://ckeyer-file-s.daoapp.io/"
+	Token = "123"
+)
 
 func main() {
 	Upload()
@@ -46,7 +51,10 @@ func Upload() (err error) {
 		fmt.Println("f")
 		return err
 	}
+
 	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("X-CKEYER-SHA1", HmacSha1(buf.Bytes(), Token))
+
 	var client http.Client
 	res, err := client.Do(req)
 	if err != nil {
@@ -56,4 +64,11 @@ func Upload() (err error) {
 	io.Copy(os.Stderr, res.Body) // Replace this with Status.Code check
 	fmt.Println("h")
 	return err
+}
+
+func HmacSha1(message, key []byte) string {
+	mac := hmac.New(sha1.New, key)
+	mac.Write(message)
+	expectedMAC := mac.Sum(nil)
+	return fmt.Sprintf("%x", expectedMAC)
 }
